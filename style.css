@@ -1,0 +1,16 @@
+:root{--bg:#f5f3ec;--card:#fff;--ink:#0d1b3d;--mut:#5b6478;--gold:#b98a1e;--line:#e2dccb;--ok:#18794e;--bad:#c0392b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:3px solid var(--gold);background:var(--card)}
+header img{width:52px;height:52px}header h1{font-size:17px;margin:0}header p{margin:0;color:var(--mut);font-size:12px}
+header .sp{flex:1}main{max-width:860px;margin:0 auto;padding:16px 18px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+h2{font-size:16px;margin:0 0 10px}label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+button{background:var(--ink);color:#f3d98b;border:0;padding:10px 16px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer;margin-top:12px}
+button:disabled{opacity:.5}button.sm{padding:6px 10px;font-size:13px;margin:6px 6px 0 0}button.yes{background:var(--ok);color:#fff}button.no{background:var(--bad);color:#fff}button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.msg{padding:10px 12px;border-radius:8px;margin-top:12px;font-size:14px}.err{background:#fde8e6;color:#8a1f12}.ok{background:#e2f5ea;color:#0f5a37}.info{background:#fbf1d3;color:#5c4408}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.qris{max-width:300px;width:100%;border-radius:10px;display:block;margin:auto}canvas{max-width:100%;width:100%;border:1px solid var(--line);border-radius:8px}
+.row{display:flex;gap:12px;border-top:1px solid var(--line);padding:12px 0;flex-wrap:wrap}.row img{width:100px;border-radius:6px;cursor:zoom-in}
+.tag{padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}.pending{background:#fbf1d3}.approved{background:#e2f5ea}.rejected{background:#fde8e6}
+.f4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.f4 span{font-size:12px;color:var(--mut)}.hide{display:none}

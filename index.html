@@ -1,0 +1,51 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E-Sertifikat Diklat Online Sahwahita</title><link rel="stylesheet" href="style.css"></head><body>
+<header><img src="logo.png" alt="Logo"><div><h1>E-Sertifikat Diklat Online Sahwahita</h1><p>Isi data, bayar Rp25.000, unduh sertifikat</p></div><span class="sp"></span><button class="ghost sm hide" id="out">Keluar</button></header>
+<main>
+<section id="auth" class="card"><h2 id="atitle">Masuk</h2>
+<label>Email</label><input id="em" type="email" autocomplete="email"><label>Kata sandi (min. 6 karakter)</label><input id="pw" type="password" autocomplete="current-password">
+<button id="go">Masuk</button> <button class="ghost" id="sw">Belum punya akun? Daftar</button><div id="amsg"></div></section>
+<section id="app" class="hide">
+<div class="card"><h2>1. Data peserta</h2><label>Nama lengkap</label><input id="nama"><label>NIP / NIPPPK</label><input id="nip" inputmode="numeric"><label>Sekolah</label><input id="sek"></div>
+<div class="card"><h2>2. Pembayaran Rp25.000</h2><div class="grid"><div><img class="qris" src="qris.jpg" alt="QRIS Sahwahita Merchant"></div>
+<div><p><b>Transfer ke QRIS SAHWAHITA MERCHANT</b><br>SAHWAHITA, EDUKASI<br>NMID: ID1026602412383</p><p><b>Nominal tepat Rp25.000</b>, lewat m-banking atau e-wallet.</p>
+<div class="msg info">Unggah <b>screenshot bukti transfer yang baru diambil</b> (maks. 15 menit lalu). Selain bukti transfer bank/e-wallet, foto layar dari kamera, atau gambar lama akan ditolak.</div></div></div>
+<label>Metode</label><select id="met"><option>Bank (m-banking)</option><option>E-wallet</option></select>
+<label>Screenshot bukti transfer</label><input type="file" id="bukti" accept="image/png,image/jpeg,image/webp"><button id="kirim">Kirim data &amp; bukti bayar</button><div id="pmsg"></div></div>
+<div class="card"><h2>3. Status &amp; sertifikat</h2><div id="status">Belum ada pengiriman.</div><div id="cb" class="hide"><canvas id="cert"></canvas><button id="dl">Unduh sertifikat (PNG)</button></div></div>
+</section></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script><script src="common.js"></script>
+<script>
+let reg=false,me=null,cfg=DEF,last=null;
+$("sw").onclick=()=>{reg=!reg;$("atitle").textContent=$("go").textContent=reg?"Daftar":"Masuk";$("sw").textContent=reg?"Sudah punya akun? Masuk":"Belum punya akun? Daftar"};
+$("go").onclick=async()=>{const c={email:$("em").value.trim(),password:$("pw").value};
+ const{error}=reg?await sb.auth.signUp(c):await sb.auth.signInWithPassword(c);
+ if(error)return note("amsg",esc(error.message),"err");if(reg)note("amsg","Akun dibuat. Jika diminta, cek email untuk konfirmasi lalu masuk.","ok")};
+$("out").onclick=()=>sb.auth.signOut();
+sb.auth.onAuthStateChange((_,s)=>{me=s?.user||null;$("auth").classList.toggle("hide",!!me);$("app").classList.toggle("hide",!me);$("out").classList.toggle("hide",!me);if(me)refresh()});
+async function refresh(){cfg=await getCfg();
+ const{data}=await sb.from("payments").select("*").eq("user_id",me.id).order("created_at",{ascending:false}).limit(1);last=data?.[0]||null;
+ if(!last){$("status").textContent="Belum ada pengiriman.";$("cb").classList.add("hide");return}
+ const t={pending:"Menunggu verifikasi admin",approved:"Pembayaran terverifikasi",rejected:"Ditolak"+(last.note?": "+esc(last.note):"")+". Silakan kirim ulang."};
+ $("status").innerHTML=`<span class="tag ${last.status}">${t[last.status]}</span> ${esc(last.nama)}`;
+ $("cb").classList.toggle("hide",last.status!=="approved");if(last.status==="approved")drawCert($("cert"),cfg,{nama:last.nama,nip:last.nip,sek:last.sekolah})}
+function pack(file,stamp){return new Promise(async res=>{const i=await loadImg(URL.createObjectURL(file));let sc=Math.min(1,1100/i.width);
+ const c=document.createElement("canvas");c.width=i.width*sc;c.height=i.height*sc;const g=c.getContext("2d");g.drawImage(i,0,0,c.width,c.height);
+ g.fillStyle="rgba(13,27,61,.85)";g.fillRect(0,c.height-28,c.width,28);g.fillStyle="#f3d98b";g.font="14px sans-serif";g.fillText(stamp,8,c.height-9);
+ c.toBlob(b=>res({b,w:i.width,h:i.height}),"image/jpeg",.8)})}
+async function sha(f){const b=await crypto.subtle.digest("SHA-256",await f.arrayBuffer());return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,16)}
+$("kirim").onclick=async()=>{const d={nama:$("nama").value.trim(),nip:$("nip").value.replace(/\s/g,""),sek:$("sek").value.trim()},f=$("bukti").files[0];
+ if(!d.nama||!d.nip||!d.sek)return note("pmsg","Nama, NIP/NIPPPK, dan sekolah wajib diisi.","err");
+ if(!/^\d{8,20}$/.test(d.nip))return note("pmsg","NIP/NIPPPK harus angka (8–20 digit).","err");
+ if(!f)return note("pmsg","Unggah screenshot bukti transfer.","err");
+ if(!/^image\/(png|jpeg|webp)$/.test(f.type))return note("pmsg","Ditolak: file harus gambar screenshot.","err");
+ const age=Date.now()-f.lastModified;if(age>15*60*1000||age<-60000)return note("pmsg","Ditolak: bukan screenshot real time. Ambil screenshot baru (maks. 15 menit) lalu unggah.","err");
+ $("kirim").disabled=true;try{const now=new Date(),p=await pack(f,"Diunggah "+now.toLocaleString("id-ID")+" | "+d.nama+" | Rp25.000");
+  if(p.w>p.h)throw Error("Ditolak: gambar landscape. Screenshot m-banking/e-wallet berbentuk potret.");
+  const path=me.id+"/"+Date.now()+".jpg";const u=await sb.storage.from("bukti").upload(path,p.b,{contentType:"image/jpeg"});if(u.error)throw u.error;
+  const r=await sb.from("payments").insert({nama:d.nama,nip:d.nip,sekolah:d.sek,method:$("met").value,proof_path:path,shot_at:new Date(f.lastModified).toISOString(),hash:await sha(f)});
+  if(r.error)throw r.error;note("pmsg","Terkirim. Menunggu verifikasi admin.","ok");refresh()}
+ catch(e){note("pmsg",esc(e.message||"Gagal mengirim"),"err")}$("kirim").disabled=false};
+$("dl").onclick=()=>{const a=document.createElement("a");a.href=$("cert").toDataURL("image/png");a.download="Sertifikat-"+last.nama.replace(/\W+/g,"_")+".png";a.click()};
+</script></body></html>

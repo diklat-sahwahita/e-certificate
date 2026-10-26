@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Panel Admin – Sahwahita</title><link rel="stylesheet" href="style.css"></head><body>
+<header><img src="logo.png" alt="Logo"><div><h1>Panel Admin Sahwahita</h1><p>Khusus admin</p></div><span class="sp"></span><button class="ghost sm hide" id="out">Keluar</button></header>
+<main>
+<section id="auth" class="card"><h2>Masuk admin</h2><label>Email</label><input id="em" type="email"><label>Kata sandi</label><input id="pw" type="password"><button id="go">Masuk</button><div id="amsg"></div></section>
+<section id="app" class="hide">
+<div class="card"><h2>Template sertifikat</h2><input type="file" id="tpl" accept="image/png,image/jpeg"><p style="color:var(--mut);font-size:13px">Posisi dalam persen (X dari kiri, Y dari atas), ukuran = persen lebar.</p><div id="fields"></div><canvas id="acv" style="margin-top:10px"></canvas><button id="simpan">Simpan pengaturan</button><div id="smsg"></div></div>
+<div class="card"><h2>Verifikasi pembayaran</h2><div id="list">Memuat…</div></div>
+</section></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script><script src="common.js"></script>
+<script>
+let cfg=DEF;const FN={nama:"Nama",nip:"NIP/NIPPPK",sek:"Sekolah"};
+$("go").onclick=async()=>{const{error}=await sb.auth.signInWithPassword({email:$("em").value.trim(),password:$("pw").value});if(error)note("amsg",esc(error.message),"err")};
+$("out").onclick=()=>sb.auth.signOut();
+sb.auth.onAuthStateChange(async(_,s)=>{const u=s?.user;$("out").classList.toggle("hide",!u);
+ if(!u){$("auth").classList.remove("hide");$("app").classList.add("hide");return}
+ const{data}=await sb.from("admins").select("user_id").eq("user_id",u.id).maybeSingle();
+ if(!data){note("amsg","Akun ini bukan admin.","err");await sb.auth.signOut();return}
+ $("auth").classList.add("hide");$("app").classList.remove("hide");cfg=await getCfg();fields();prev();load()});
+const prev=()=>drawCert($("acv"),cfg,{nama:"Nama Peserta Contoh",nip:"198001012005011001",sek:"SDN 1 Contoh"});
+function fields(){$("fields").innerHTML=Object.keys(FN).map(k=>`<div class="f4"><div><span>${FN[k]} X%</span><input data-k="${k}" data-p="x" type="number" value="${cfg.f[k].x}"></div><div><span>Y%</span><input data-k="${k}" data-p="y" type="number" value="${cfg.f[k].y}"></div><div><span>Ukuran</span><input data-k="${k}" data-p="s" type="number" step=".1" value="${cfg.f[k].s}"></div><div><span>Warna</span><input data-k="${k}" data-p="c" type="color" value="${cfg.f[k].c}"></div></div>`).join("");
+ $("fields").querySelectorAll("input").forEach(i=>i.oninput=()=>{cfg.f[i.dataset.k][i.dataset.p]=i.dataset.p==="c"?i.value:+i.value;prev()})}
+$("tpl").onchange=async e=>{const f=e.target.files[0];if(!f)return;const p="template-"+Date.now()+(f.type==="image/png"?".png":".jpg");
+ const u=await sb.storage.from("templates").upload(p,f,{contentType:f.type});if(u.error)return note("smsg",esc(u.error.message),"err");
+ cfg.tpl=sb.storage.from("templates").getPublicUrl(p).data.publicUrl;prev();note("smsg","Template diunggah. Klik Simpan.","ok")};
+$("simpan").onclick=async()=>{const{error}=await sb.from("config").upsert({id:1,data:cfg});note("smsg",error?esc(error.message):"Tersimpan.",error?"err":"ok")};
+async function load(){const{data,error}=await sb.from("payments").select("*").order("created_at",{ascending:false});
+ if(error)return $("list").textContent=error.message;if(!data.length)return $("list").textContent="Belum ada pembayaran.";
+ const urls=await Promise.all(data.map(r=>sb.storage.from("bukti").createSignedUrl(r.proof_path,3600)));
+ $("list").innerHTML=data.map((r,i)=>`<div class="row"><a href="${urls[i].data?.signedUrl}" target="_blank"><img src="${urls[i].data?.signedUrl}"></a><div style="flex:1;min-width:200px"><b>${esc(r.nama)}</b> <span class="tag ${r.status}">${r.status}</span><br>NIP: ${esc(r.nip)}<br>${esc(r.sekolah)}<br><small>${esc(r.method)} · Rp${r.amount} · screenshot ${new Date(r.shot_at).toLocaleString("id-ID")} · kirim ${new Date(r.created_at).toLocaleString("id-ID")} · id ${esc(r.hash)}</small><br><button class="sm yes" data-a="approved" data-i="${r.id}">Setujui</button><button class="sm no" data-a="rejected" data-i="${r.id}">Tolak</button></div></div>`).join("");
+ $("list").querySelectorAll("button").forEach(b=>b.onclick=async()=>{let n="";if(b.dataset.a==="rejected")n=prompt("Alasan penolakan:","Nominal/bukti tidak sesuai")||"";
+  await sb.from("payments").update({status:b.dataset.a,note:n}).eq("id",b.dataset.i);load()})}
+</script></body></html>
