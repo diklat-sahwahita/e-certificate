@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script><script src="common.js"></script>
 <script>
-let cfg=DEF;const FN={nama:"Nama",nip:"NIP/NIPPPK",sek:"Sekolah"};
+let cfg=DEF;const FN={nomor:"Nomor",nama:"Nama",nip:"NIP/NIPPPK",sek:"Sekolah"};
 $("go").onclick=async()=>{const{error}=await sb.auth.signInWithPassword({email:$("em").value.trim(),password:$("pw").value});if(error)note("amsg",esc(error.message),"err")};
 $("out").onclick=()=>sb.auth.signOut();
 sb.auth.onAuthStateChange(async(_,s)=>{const u=s?.user;$("out").classList.toggle("hide",!u);
@@ -18,7 +18,7 @@ sb.auth.onAuthStateChange(async(_,s)=>{const u=s?.user;$("out").classList.toggle
  const{data}=await sb.from("admins").select("user_id").eq("user_id",u.id).maybeSingle();
  if(!data){note("amsg","Akun ini bukan admin.","err");await sb.auth.signOut();return}
  $("auth").classList.add("hide");$("app").classList.remove("hide");cfg=await getCfg();fields();prev();load()});
-const prev=()=>drawCert($("acv"),cfg,{nama:"Nama Peserta Contoh",nip:"198001012005011001",sek:"SDN 1 Contoh"});
+const prev=()=>drawCert($("acv"),cfg,{nomor:1,nama:"Nama Peserta Contoh",nip:"198001012005011001",sek:"SDN 1 Contoh"});
 function fields(){$("fields").innerHTML=Object.keys(FN).map(k=>`<div class="f4"><div><span>${FN[k]} X%</span><input data-k="${k}" data-p="x" type="number" value="${cfg.f[k].x}"></div><div><span>Y%</span><input data-k="${k}" data-p="y" type="number" value="${cfg.f[k].y}"></div><div><span>Ukuran</span><input data-k="${k}" data-p="s" type="number" step=".1" value="${cfg.f[k].s}"></div><div><span>Warna</span><input data-k="${k}" data-p="c" type="color" value="${cfg.f[k].c}"></div></div>`).join("");
  $("fields").querySelectorAll("input").forEach(i=>i.oninput=()=>{cfg.f[i.dataset.k][i.dataset.p]=i.dataset.p==="c"?i.value:+i.value;prev()})}
 $("tpl").onchange=async e=>{const f=e.target.files[0];if(!f)return;const p="template-"+Date.now()+(f.type==="image/png"?".png":".jpg");

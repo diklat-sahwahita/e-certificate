@@ -29,7 +29,7 @@ async function refresh(){cfg=await getCfg();
  if(!last){$("status").textContent="Belum ada pengiriman.";$("cb").classList.add("hide");return}
  const t={pending:"Menunggu verifikasi admin",approved:"Pembayaran terverifikasi",rejected:"Ditolak"+(last.note?": "+esc(last.note):"")+". Silakan kirim ulang."};
  $("status").innerHTML=`<span class="tag ${last.status}">${t[last.status]}</span> ${esc(last.nama)}`;
- $("cb").classList.toggle("hide",last.status!=="approved");if(last.status==="approved")drawCert($("cert"),cfg,{nama:last.nama,nip:last.nip,sek:last.sekolah})}
+ $("cb").classList.toggle("hide",last.status!=="approved");if(last.status==="approved")drawCert($("cert"),cfg,{nomor:last.nomor,nama:last.nama,nip:last.nip,sek:last.sekolah})}
 function pack(file,stamp){return new Promise(async res=>{const i=await loadImg(URL.createObjectURL(file));let sc=Math.min(1,1100/i.width);
  const c=document.createElement("canvas");c.width=i.width*sc;c.height=i.height*sc;const g=c.getContext("2d");g.drawImage(i,0,0,c.width,c.height);
  g.fillStyle="rgba(13,27,61,.85)";g.fillRect(0,c.height-28,c.width,28);g.fillStyle="#f3d98b";g.font="14px sans-serif";g.fillText(stamp,8,c.height-9);
