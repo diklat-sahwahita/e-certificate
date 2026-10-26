@@ -1,2 +1,1 @@
-// Isi dengan data proyek Supabase Anda (Project Settings > API)
-window.CFG={URL:"https://XXXX.supabase.co",ANON:"ISI_ANON_PUBLIC_KEY"};
+window.CFG={URL:"https://catmbnyovifpcpqdzfic.supabase.co",ANON:"sb_publishable_mv9ZbKyTsRavYHJsieXP1g_QmsLIhkz"};
